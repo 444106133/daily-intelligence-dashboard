@@ -37,10 +37,10 @@ export function renderCard(item, rank) {
         <span class="paper-rank ${isTop3 ? 'top-3' : ''}">${rank}</span>
         <div class="paper-badges">${badgesHtml}</div>
       </div>
-      <h3 class="paper-headline-ar">${item.arabicHeadline}</h3>
-      <h4 class="paper-title">
-        <a href="${item.link}" target="_blank" rel="noopener" dir="ltr">${item.title}</a>
-      </h4>
+      <h3 class="paper-headline-ar">
+        <a href="${item.link}" target="_blank" rel="noopener">${item.arabicHeadline}</a>
+      </h3>
+      <p class="paper-title-en" dir="ltr">${item.title}</p>
       <p class="paper-summary" id="summary-${item.id}">${item.arabicSummary}</p>
       <button class="expand-btn" data-target="summary-${item.id}">عرض المزيد ↓</button>
       ${keywordsHtml ? `<div class="paper-keywords">${keywordsHtml}</div>` : ''}

@@ -3,7 +3,7 @@
  * Focused on AI, LLM, GenAI, Deep Learning topics.
  * Now uses smart Arabic translation for headlines.
  */
-import { detectTopic, formatTimeAgo, translateHeadline } from '../arabic.js';
+import { detectTopic, formatTimeAgo, translateHeadline, generateArabicSummary } from '../arabic.js';
 
 const HN_SEARCH = 'https://hn.algolia.com/api/v1/search';
 
@@ -63,14 +63,7 @@ export async function fetchItems(/* args */) {
     const arabicHeadline = `${icon} ${translatedHeadline}${engagementSuffix}`;
 
     // Rich Arabic summary
-    let arabicSummary;
-    if (hit.story_text) {
-      arabicSummary = hit.story_text.replace(/<[^>]*>/g, '').slice(0, 400);
-    } else {
-      // Build a descriptive summary from metadata
-      const topicContext = topicAr ? `في مجال ${topicAr}` : '';
-      arabicSummary = `مقال على Hacker News ${topicContext} يناقش: ${hit.title}. حصل على ${points} نقطة و ${comments} تعليق${points >= 100 ? '، ما يعكس اهتماماً واسعاً من مجتمع المطورين.' : '.'}`;
-    }
+    const arabicSummary = generateArabicSummary(hit.title, hit.story_text?.replace(/<[^>]*>/g, '') || '', 'Hacker News');
 
     return {
       id: hit.objectID,

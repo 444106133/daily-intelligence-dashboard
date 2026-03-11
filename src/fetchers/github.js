@@ -63,11 +63,9 @@ export async function fetchItems(args = {}) {
       else if (desc.includes('nlp') || topicsStr.includes('nlp')) mlType = 'معالجة لغة طبيعية';
 
       // Rich Arabic summary
-      const topicsDisplay = (repo.topics || []).slice(0, 5).join(', ');
-      let arabicSummary = repo.description;
-      if (mlType) arabicSummary += ` — نوع التعلم: ${mlType}`;
-      if (topicsDisplay) arabicSummary += ` | الموضوعات: ${topicsDisplay}`;
-      arabicSummary += ` | ${stars.toLocaleString()} نجمة، ${(repo.forks_count || 0).toLocaleString()} تفريع`;
+      let arabicSummary = generateArabicSummary(repo.description || repo.full_name, '', 'GitHub');
+      if (mlType) arabicSummary += ` نوع التعلم: ${mlType}.`;
+      arabicSummary += ` ${stars.toLocaleString()} نجمة، ${(repo.forks_count || 0).toLocaleString()} تفريع.`;
 
       return {
         id: repo.full_name,

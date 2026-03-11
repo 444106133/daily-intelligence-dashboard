@@ -2,7 +2,7 @@
  * HuggingFace Daily Papers Fetcher
  * Now uses smart Arabic translation for paper titles.
  */
-import { detectTopic, getHoursAgo, formatTimeAgo, truncateSummary, translateHeadline } from '../arabic.js';
+import { detectTopic, getHoursAgo, formatTimeAgo, truncateSummary, translateHeadline, generateArabicSummary } from '../arabic.js';
 
 const MAJOR_ORGS = new Set([
   'nvidia', 'google', 'metaresearch', 'meta', 'microsoft', 'microsoftresearch',
@@ -46,7 +46,7 @@ export async function fetchItems(/* args */) {
       publishedAt: submittedAt,
       isWithin24h,
       arabicHeadline: '',
-      arabicSummary: truncateSummary(p.ai_summary || p.summary),
+      arabicSummary: generateArabicSummary(p.title, p.ai_summary || p.summary, org?.fullname || org?.name || 'HuggingFace'),
       metadata: {
         upvotes: p.upvotes || 0,
         stars: p.githubStars || 0,
