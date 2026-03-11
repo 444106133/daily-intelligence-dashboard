@@ -1,8 +1,9 @@
 /**
  * Google News RSS Fetcher — Used for Smart Grid, AI News, Renewable Energy, Kaggle.
  * Fetches through Vite proxy in dev, Vercel serverless in production.
+ * Now uses smart Arabic translation for headlines.
  */
-import { detectTopic } from '../arabic.js';
+import { detectTopic, translateHeadline, generateArabicSummary } from '../arabic.js';
 
 export async function fetchItems(args = {}) {
   const query = args.query || 'artificial intelligence';
@@ -35,17 +36,20 @@ export async function fetchItems(args = {}) {
     const publishedAt = new Date(pubDate).toISOString();
     const isWithin24h = new Date(publishedAt) >= _24h;
 
-    const topic = detectTopic(title + ' ' + description);
-    const topicAr = topic || 'تقنية';
-
     // Score — simple recency + position-based
     let score = 100 - idx; // higher rank = higher score
     if (isWithin24h) score += 20;
 
-    let arabicHeadline;
-    if (idx < 3) arabicHeadline = `🔥 خبر بارز: تطور جديد في ${topicAr}`;
-    else if (idx < 8) arabicHeadline = `📰 ${topicAr}: تحديث مهم`;
-    else arabicHeadline = `📄 خبر جديد عن ${topicAr}`;
+    // --- Smart Arabic Translation ---
+    // Icon based on rank
+    const icon = idx < 3 ? '🔥' : idx < 8 ? '📰' : '📄';
+
+    // Translate headline using actual title content
+    const translatedHeadline = translateHeadline(title);
+    const arabicHeadline = `${icon} ${translatedHeadline}`;
+
+    // Generate rich Arabic summary
+    const arabicSummary = generateArabicSummary(title, description, xmlSource);
 
     return {
       id: `news-${Date.now()}-${idx}`,
@@ -55,7 +59,7 @@ export async function fetchItems(args = {}) {
       publishedAt,
       isWithin24h,
       arabicHeadline,
-      arabicSummary: description || `خبر من ${xmlSource} حول ${topicAr}`,
+      arabicSummary,
       metadata: {
         sourceName: xmlSource,
         keywords: [],

@@ -1,19 +1,19 @@
 /**
  * Hacker News Fetcher — Uses Algolia Search API (CORS-friendly).
  * Focused on AI, LLM, GenAI, Deep Learning topics.
+ * Now uses smart Arabic translation for headlines.
  */
-import { detectTopic, formatTimeAgo } from '../arabic.js';
+import { detectTopic, formatTimeAgo, translateHeadline } from '../arabic.js';
 
 const HN_SEARCH = 'https://hn.algolia.com/api/v1/search';
-const AI_QUERIES = [
-  'LLM', 'GPT', 'AI', 'deep learning', 'machine learning',
-  'generative AI', 'transformer', 'diffusion', 'neural network',
-  'OpenAI', 'Claude', 'Gemini', 'Llama', 'Mistral',
-];
 
 export async function fetchItems(/* args */) {
   // Fetch multiple AI queries in parallel for broader coverage
-  const queries = ['LLM OR GPT OR "language model"', 'AI OR "artificial intelligence" OR "deep learning"', '"generative AI" OR transformer OR diffusion'];
+  const queries = [
+    'LLM OR GPT OR "language model"',
+    'AI OR "artificial intelligence" OR "deep learning"',
+    '"generative AI" OR transformer OR diffusion',
+  ];
   const results = await Promise.allSettled(
     queries.map(q =>
       fetch(`${HN_SEARCH}?query=${encodeURIComponent(q)}&tags=story&hitsPerPage=20&numericFilters=created_at_i>${Math.floor(Date.now() / 1000) - 72 * 3600}`)
@@ -51,11 +51,26 @@ export async function fetchItems(/* args */) {
     if (isWithin24h) score += 10;
     if (points >= 100) score += 20;
 
-    // Arabic headline
-    let arabicHeadline;
-    if (points >= 200) arabicHeadline = `🔥 مقال رائج عن ${topicAr} يحظى باهتمام كبير على Hacker News`;
-    else if (points >= 50) arabicHeadline = `⭐ نقاش مهم حول ${topicAr} على Hacker News`;
-    else arabicHeadline = `📰 مقال جديد عن ${topicAr} على Hacker News`;
+    // --- Smart Arabic Headline ---
+    const icon = points >= 200 ? '🔥' : points >= 50 ? '⭐' : '📰';
+    const translatedHeadline = translateHeadline(hit.title);
+
+    // Build contextual suffix with engagement stats
+    const engagementSuffix = points >= 100
+      ? ` (${points} نقطة، ${comments} تعليق على HN)`
+      : '';
+
+    const arabicHeadline = `${icon} ${translatedHeadline}${engagementSuffix}`;
+
+    // Rich Arabic summary
+    let arabicSummary;
+    if (hit.story_text) {
+      arabicSummary = hit.story_text.replace(/<[^>]*>/g, '').slice(0, 400);
+    } else {
+      // Build a descriptive summary from metadata
+      const topicContext = topicAr ? `في مجال ${topicAr}` : '';
+      arabicSummary = `مقال على Hacker News ${topicContext} يناقش: ${hit.title}. حصل على ${points} نقطة و ${comments} تعليق${points >= 100 ? '، ما يعكس اهتماماً واسعاً من مجتمع المطورين.' : '.'}`;
+    }
 
     return {
       id: hit.objectID,
@@ -65,9 +80,7 @@ export async function fetchItems(/* args */) {
       publishedAt,
       isWithin24h,
       arabicHeadline,
-      arabicSummary: hit.story_text
-        ? hit.story_text.replace(/<[^>]*>/g, '').slice(0, 300)
-        : `مقال على Hacker News حول ${topicAr} — ${points} نقطة و ${comments} تعليق`,
+      arabicSummary,
       metadata: {
         upvotes: points,
         comments,

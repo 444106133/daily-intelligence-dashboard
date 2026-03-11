@@ -1,7 +1,8 @@
 /**
  * HuggingFace Daily Papers Fetcher
+ * Now uses smart Arabic translation for paper titles.
  */
-import { detectTopic, getHoursAgo, formatTimeAgo, truncateSummary } from '../arabic.js';
+import { detectTopic, getHoursAgo, formatTimeAgo, truncateSummary, translateHeadline } from '../arabic.js';
 
 const MAJOR_ORGS = new Set([
   'nvidia', 'google', 'metaresearch', 'meta', 'microsoft', 'microsoftresearch',
@@ -58,17 +59,26 @@ export async function fetchItems(/* args */) {
       score: 0,
     };
 
-    // Arabic headline
-    const topicAr = topic || 'بحث ذكاء اصطناعي';
+    // --- Smart Arabic Headline ---
     const orgLabel = card.metadata.organization;
-    if (card.metadata.upvotes >= 20)
-      card.arabicHeadline = `🔥 إنجاز بارز في ${topicAr}${orgLabel ? ` من ${orgLabel}` : ''} يجذب اهتماماً واسعاً`;
-    else if (card.metadata.upvotes >= 10)
-      card.arabicHeadline = `⭐ تقدم ملحوظ في ${topicAr}${orgLabel ? ` — ${orgLabel}` : ''}`;
-    else if (card.metadata.hasCode)
-      card.arabicHeadline = `🔬 بحث جديد في ${topicAr} مع كود مفتوح${orgLabel ? ` — ${orgLabel}` : ''}`;
-    else
-      card.arabicHeadline = `📄 بحث جديد في ${topicAr}${orgLabel ? ` من ${orgLabel}` : ''}`;
+    const upvotes = card.metadata.upvotes;
+
+    // Pick icon based on engagement
+    let icon;
+    if (upvotes >= 20) icon = '🔥';
+    else if (upvotes >= 10) icon = '⭐';
+    else if (card.metadata.hasCode) icon = '🔬';
+    else icon = '📄';
+
+    // Translate the actual paper title
+    const translatedTitle = translateHeadline(p.title);
+
+    // Build rich headline with org + engagement context
+    let headlineParts = [icon, translatedTitle];
+    if (orgLabel) headlineParts.push(`— ${orgLabel}`);
+    if (upvotes >= 10) headlineParts.push(`(${upvotes} تصويت)`);
+
+    card.arabicHeadline = headlineParts.join(' ');
 
     // Badges
     if (org) card.badges.push({ text: orgLabel, type: 'org' });

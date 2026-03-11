@@ -1,7 +1,8 @@
 /**
  * GitHub Repositories Fetcher — Uses GitHub Search API (CORS-friendly).
+ * Now uses smart Arabic translation for repo descriptions.
  */
-import { detectTopic } from '../arabic.js';
+import { detectTopic, translateHeadline, generateArabicSummary } from '../arabic.js';
 
 const GH_API = 'https://api.github.com/search/repositories';
 
@@ -40,11 +41,15 @@ export async function fetchItems(args = {}) {
       if (stars >= 100) score += 20;
       if (repo.topics?.length >= 3) score += 5;
 
-      // Arabic headline
-      let arabicHeadline;
-      if (stars >= 500) arabicHeadline = `🌟 مشروع بارز في ${topicAr} على GitHub — ${stars.toLocaleString()} نجمة`;
-      else if (stars >= 50) arabicHeadline = `⭐ مشروع ${topicAr} رائج على GitHub`;
-      else arabicHeadline = `🔧 مشروع جديد في ${topicAr} على GitHub`;
+      // --- Smart Arabic Headline ---
+      const icon = stars >= 500 ? '🌟' : stars >= 50 ? '⭐' : '🔧';
+
+      // Translate the repo description (more descriptive than the repo name)
+      const translatedDesc = translateHeadline(repo.description || repo.full_name);
+
+      // Build headline: icon + translated desc + star count
+      const starLabel = stars >= 100 ? ` — ${stars.toLocaleString()} ⭐` : '';
+      const arabicHeadline = `${icon} ${repo.full_name}: ${translatedDesc}${starLabel}`;
 
       // Determine ML type
       const desc = (repo.description || '').toLowerCase();
@@ -57,6 +62,13 @@ export async function fetchItems(args = {}) {
       else if (desc.includes('reinforcement') || topicsStr.includes('reinforcement')) mlType = 'تعلم معزز';
       else if (desc.includes('nlp') || topicsStr.includes('nlp')) mlType = 'معالجة لغة طبيعية';
 
+      // Rich Arabic summary
+      const topicsDisplay = (repo.topics || []).slice(0, 5).join(', ');
+      let arabicSummary = repo.description;
+      if (mlType) arabicSummary += ` — نوع التعلم: ${mlType}`;
+      if (topicsDisplay) arabicSummary += ` | الموضوعات: ${topicsDisplay}`;
+      arabicSummary += ` | ${stars.toLocaleString()} نجمة، ${(repo.forks_count || 0).toLocaleString()} تفريع`;
+
       return {
         id: repo.full_name,
         title: repo.full_name,
@@ -65,7 +77,7 @@ export async function fetchItems(args = {}) {
         publishedAt: repo.pushed_at,
         isWithin24h,
         arabicHeadline,
-        arabicSummary: repo.description + (mlType ? ` — نوع التعلم: ${mlType}` : ''),
+        arabicSummary,
         metadata: {
           stars,
           forks: repo.forks_count || 0,
