@@ -11,6 +11,13 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      '/api/news': {
+        target: 'https://news.google.com',
+        changeOrigin: true,
+        secure: true,
+        followRedirects: true,
+        rewrite: (path) => path.replace(/^\/api\/news/, '/rss/search'),
+      },
     },
   },
 });
