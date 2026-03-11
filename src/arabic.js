@@ -301,37 +301,56 @@ export function translateHeadline(englishTitle, options = {}) {
 
 /**
  * Generate a rich Arabic summary from the title + description.
+ * Produces genuinely Arabic text — not just a pass-through of English.
  */
 export function generateArabicSummary(title, description, sourceName) {
-  const parts = [];
+  if (!title) return 'لا يتوفر ملخص.';
 
-  // Use description if available
-  if (description && description.length > 20) {
-    parts.push(description);
-  }
-
-  // Add context from the title
   const topic = detectTopic(title);
   const country = detectCountry((title || '').toLowerCase());
   const entities = extractEntities(title);
   const stats = extractNumbers(title);
+  const action = detectAction(title);
+  const allTopics = detectAllTopics(title + ' ' + (description || ''));
 
-  // Build contextual suffix
-  const contextParts = [];
-  if (topic) contextParts.push(`في مجال ${topic}`);
-  if (country) contextParts.push(`في ${country}`);
-  if (entities.length > 0) contextParts.push(`من ${entities.slice(0, 2).join(' و')}`);
+  // Build Arabic sentences
+  const sentences = [];
 
-  if (parts.length === 0) {
-    // No description available — build from metadata
-    let summary = 'خبر ';
-    if (sourceName) summary += `من ${sourceName} `;
-    if (contextParts.length > 0) summary += contextParts.join(' ');
-    if (stats) summary += ` — ${stats}`;
-    parts.push(summary);
+  // Opening sentence — describe what the news is about
+  if (entities.length > 0 && action) {
+    const entityStr = entities.slice(0, 2).join(' و');
+    let opening = `${entityStr} ${action}`;
+    if (topic) opening += ` ${topic}`;
+    if (country) opening += ` في ${country}`;
+    if (stats) opening += ` بقيمة ${stats}`;
+    sentences.push(opening + '.');
+  } else if (topic) {
+    let opening = `تطور جديد في مجال ${topic}`;
+    if (country) opening += ` في ${country}`;
+    if (entities.length > 0) opening += ` يتعلق بـ ${entities[0]}`;
+    if (stats) opening += ` — ${stats}`;
+    sentences.push(opening + '.');
   }
 
-  return parts.join(' | ');
+  // Context sentence — additional topics
+  if (allTopics.length > 1) {
+    const otherTopics = allTopics.slice(1, 3).join(' و');
+    sentences.push(`يتناول ${otherTopics} أيضاً.`);
+  }
+
+  // Source attribution
+  if (sourceName) {
+    sentences.push(`المصدر: ${sourceName}.`);
+  }
+
+  // If we couldn't generate anything meaningful, use translated title
+  if (sentences.length === 0) {
+    const translated = translateHeadline(title);
+    sentences.push(translated);
+    if (sourceName) sentences.push(`المصدر: ${sourceName}.`);
+  }
+
+  return sentences.join(' ');
 }
 
 /**
@@ -367,13 +386,13 @@ function extractEntities(title) {
       entities.push(entity);
     }
   }
-
-  // Also capture capitalized words that look like company names (2+ capital words)
-  const capPattern = /(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/g;
-  const capMatches = title.match(capPattern) || [];
-  for (const m of capMatches) {
-    if (!entities.includes(m) && !isCommonPhrase(m) && m.length > 3) {
-      entities.push(m);
+  // Also capture ALL-CAPS acronyms like TSMC, ASML, etc. (2-6 chars)
+  const acronymPattern = /\b([A-Z]{2,6})\b/g;
+  const acronymMatches = title.match(acronymPattern) || [];
+  const skipAcronyms = new Set(['OR', 'AND', 'NOT', 'THE', 'FOR', 'NEW', 'TOP', 'ALL', 'ANY', 'GDP', 'CEO', 'IPO', 'CTO', 'CFO', 'USA', 'USD', 'MW', 'GW', 'TW', 'TWH', 'GWH', 'MWH', 'KW', 'KWH', 'AI', 'ML', 'NLP', 'API', 'GPU', 'CPU', 'RAM', 'LLM', 'GPT', 'HTTP', 'URL', 'CSS', 'HTML']);
+  for (const acr of acronymMatches) {
+    if (!entities.includes(acr) && !skipAcronyms.has(acr) && !COUNTRY_MAP[acr.toLowerCase()]) {
+      entities.push(acr);
     }
   }
 
