@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>أبرز أوراق الذكاء الاصطناعي اليومية | HuggingFace</title>
-  <meta name="description" content="تتبع أبرز أوراق البحث في الذكاء الاصطناعي يومياً من HuggingFace مع ملخصات باللغة العربية" />
+  <title>لوحة الاستخبارات اليومية | Daily Intelligence Dashboard</title>
+  <meta name="description" content="لوحة شاملة لتتبع أبرز الأخبار والأبحاث في الذكاء الاصطناعي والشبكات الذكية والطاقة المتجددة" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -16,7 +16,6 @@
   <div class="bg-grid"></div>
   <div class="bg-glow bg-glow-1"></div>
   <div class="bg-glow bg-glow-2"></div>
-  <div class="bg-glow bg-glow-3"></div>
 
   <!-- Header -->
   <header class="header">
@@ -37,12 +36,17 @@
           </svg>
         </div>
         <div>
-          <h1 class="logo-title">أوراق الذكاء الاصطناعي</h1>
-          <p class="logo-subtitle">أبرز الأبحاث اليومية من HuggingFace</p>
+          <h1 class="logo-title">لوحة الاستخبارات اليومية</h1>
+          <p class="logo-subtitle" id="section-desc">أبرز الأبحاث اليومية من HuggingFace</p>
         </div>
       </div>
       <div class="header-actions">
-        <div class="time-badge" id="time-badge">
+        <!-- Theme Toggle -->
+        <button class="theme-toggle dark" id="theme-toggle" title="تبديل المظهر" aria-label="Toggle theme">
+          <span class="theme-icon" id="theme-sun">☀️</span>
+          <span class="theme-icon active" id="theme-moon">🌙</span>
+        </button>
+        <div class="time-badge">
           <span class="time-dot"></span>
           <span id="current-time"></span>
         </div>
@@ -57,23 +61,26 @@
     </div>
   </header>
 
+  <!-- Section Tabs -->
+  <nav class="section-nav" id="section-tabs"></nav>
+
   <!-- Stats Bar -->
   <section class="stats-bar" id="stats-bar">
     <div class="stat-card">
       <div class="stat-value" id="stat-total">—</div>
-      <div class="stat-label">إجمالي الأوراق</div>
+      <div class="stat-label">إجمالي العناصر</div>
     </div>
     <div class="stat-card">
       <div class="stat-value" id="stat-24h">—</div>
       <div class="stat-label">خلال ٢٤ ساعة</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" id="stat-upvotes">—</div>
-      <div class="stat-label">أعلى تصويت</div>
+      <div class="stat-value" id="stat-top">—</div>
+      <div class="stat-label">أعلى تقييم</div>
     </div>
     <div class="stat-card">
-      <div class="stat-value" id="stat-orgs">—</div>
-      <div class="stat-label">مؤسسات بحثية</div>
+      <div class="stat-value" id="stat-sources">—</div>
+      <div class="stat-label">مصادر</div>
     </div>
   </section>
 
@@ -90,30 +97,16 @@
         <circle cx="11" cy="11" r="8"></circle>
         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
       </svg>
-      <input type="text" id="search-input" placeholder="ابحث في الأوراق..." />
+      <input type="text" id="search-input" placeholder="ابحث..." />
     </div>
   </section>
 
-  <!-- Loading State -->
-  <div class="loading" id="loading">
-    <div class="loading-spinner"></div>
-    <p>جاري تحميل أحدث الأبحاث...</p>
-  </div>
-
-  <!-- Error State -->
-  <div class="error-state hidden" id="error-state">
-    <div class="error-icon">⚠️</div>
-    <h3>حدث خطأ في تحميل البيانات</h3>
-    <p id="error-message"></p>
-    <button class="retry-btn" id="retry-btn">إعادة المحاولة</button>
-  </div>
-
-  <!-- Papers Grid -->
+  <!-- Content Grid -->
   <main class="papers-grid" id="papers-grid"></main>
 
   <!-- Footer -->
   <footer class="footer">
-    <p>البيانات من <a href="https://huggingface.co/papers" target="_blank" rel="noopener">HuggingFace Daily Papers</a> • التوقيت: Asia/Riyadh (UTC+03:00)</p>
+    <p>لوحة الاستخبارات اليومية • التوقيت: Asia/Riyadh (UTC+03:00)</p>
   </footer>
 
   <script type="module" src="/main.js"></script>
